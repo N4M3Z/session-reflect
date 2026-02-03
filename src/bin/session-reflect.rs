@@ -58,20 +58,11 @@ fn main() -> ExitCode {
     }
 
     // For PreCompact: compaction implies substantial session.
-    // Skip transcript analysis — always inject the reflection prompt.
+    // Always inject the reflection prompt — let the AI decide whether
+    // additional capture is needed, even if some memory was already written.
     if is_pre_compact {
         let reason = load_reflection_prompt(&input.cwd)
             .unwrap_or_else(|| FALLBACK_REASON.to_string());
-
-        // Check transcript if available — skip prompt if memory already written
-        if !input.transcript_path.is_empty() {
-            if let Ok(transcript) = fs::read_to_string(&input.transcript_path) {
-                let (_, _, has_memory_write) = analyze_transcript(&transcript);
-                if has_memory_write {
-                    return ExitCode::SUCCESS;
-                }
-            }
-        }
 
         let output = serde_json::json!({
             "additionalContext": format!("{}{}", PRECOMPACT_PREFIX, reason)
